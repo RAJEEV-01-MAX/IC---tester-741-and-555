@@ -1,0 +1,86 @@
+int switchPin = 3;  // Slide switch pin
+int state = 0;  // 0 = IC 741, 1 = IC 555
+
+// Pins for IC 741 testing
+int inputPin741 = A0;  // Non-inverting input of IC 741
+int outputPin741 = A1;  // Output of IC 741
+
+// Pin for IC 555 testing
+int outputPin555 = 5;  // Output of IC 555 (square wave output)
+
+// Variables for voltages and pulse width
+float inputVoltage741, outputVoltage741;
+int pulseWidth555;
+int pulseValue555;
+
+void setup() {
+  // Initialize serial communication
+  Serial.begin(9600);
+
+  // Set switch pin as input
+  pinMode(switchPin, INPUT);
+
+  // Initialize IC 741 testing pins
+  pinMode(inputPin741, INPUT);
+  pinMode(outputPin741, INPUT);
+
+  // Initialize IC 555 output pin
+  pinMode(outputPin555, INPUT);
+}
+
+void loop() {
+  // Check switch state
+  if (digitalRead(switchPin) == HIGH) {
+    state = 0;  // Slide switch position 1: IC 741 testing
+    Serial.println("Testing IC 741...");
+  } else {
+    state = 1;  // Slide switch position 2: IC 555 testing
+    Serial.println("Testing IC 555...");
+  }
+
+  if (state == 0) {
+    // IC 741 Testing
+    inputVoltage741 = analogRead(inputPin741) * (5.0 / 1023.0);  // Read input voltage
+    analogWrite(inputPin741, map(inputVoltage741, 0, 5, 0, 255));  // Apply voltage to non-inverting input
+    outputVoltage741 = analogRead(outputPin741) * (5.0 / 1023.0);  // Read output voltage
+
+    Serial.print("IC 741 - Input Voltage: ");
+    Serial.print(inputVoltage741);
+    Serial.print(" V, Output Voltage: ");
+    Serial.print(outputVoltage741);
+    Serial.println(" V");
+    
+    if ((outputVoltage741 - inputVoltage741) < 0.5) {
+      digitalWrite(12,HIGH);
+      digitalWrite(11,LOW);
+     
+    }
+    else {
+      digitalWrite(12,LOW);
+      digitalWrite(11,HIGH);
+    }
+  }
+
+  if (state == 1) {
+    // IC 555 Testing
+    pulseValue555 = analogRead(A2);
+    Serial.println(pulseValue555);
+    
+    pulseWidth555 = pulseIn(outputPin555, HIGH);  // Measure high pulse width with a 1-second timeout
+
+    if (pulseWidth555 == 0) {
+      Serial.println("No pulse detected from IC 555.");
+    } else {
+      Serial.print("IC 555 - High Pulse Width: ");
+      Serial.print(pulseWidth555);
+      Serial.println(" µs");
+    }
+    if (14250 < pulseWidth555){
+      Serial.print("IC 555 Good\n");
+    } else {
+      Serial.print("Error in IC 555\n");
+    }
+  }
+
+  delay(1000);  // Delay between readings
+}
